@@ -1,19 +1,14 @@
+mod pattern;
+
 use std::io::{self, BufRead};
+
+use pattern::Pattern;
 
 #[derive(Debug)]
 pub enum GitignoreEntry {
     Pattern(Pattern),
     Blank,
     Comment(String),
-}
-
-#[derive(Debug)]
-pub struct Pattern {
-    pub pattern: String,
-    pub is_negated: bool,
-    pub has_leading_slash: bool,
-    pub has_trailing_slash: bool,
-    pub was_escaped: bool,
 }
 
 #[derive(Debug)]
@@ -71,13 +66,13 @@ impl<R: BufRead> Parser<R> {
         let has_leading_slash = pattern.starts_with('/');
         let has_trailing_slash = pattern.ends_with('/') && !pattern.ends_with(r"\/");
 
-        Ok(GitignoreEntry::Pattern(Pattern {
-            pattern: pattern.to_string(),
+        Ok(GitignoreEntry::Pattern(Pattern::new(
+            pattern.to_string(),
             is_negated,
             has_leading_slash,
             has_trailing_slash,
             was_escaped,
-        }))
+        )?))
     }
 }
 
