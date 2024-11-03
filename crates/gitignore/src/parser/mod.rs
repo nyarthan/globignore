@@ -89,12 +89,18 @@ mod tests {
     use dedent::dedent;
 
     use super::*;
+    use pattern::Segment::*;
+    use GitignoreEntry::*;
 
     mod util {
         use super::*;
 
         pub fn from_str(s: &str) -> Parser<io::BufReader<&[u8]>> {
             Parser::new(io::BufReader::new(s.as_bytes()))
+        }
+
+        pub fn assert_pattern(pattern: &pattern::Pattern, expected: &Vec<pattern::Segment>) {
+            assert_eq!(&pattern.segments, expected);
         }
     }
 
@@ -111,8 +117,72 @@ mod tests {
         let entries: Vec<_> = parser.collect();
 
         assert_eq!(entries.len(), 3);
-        assert!(matches!(entries[0], Ok(GitignoreEntry::Pattern(_))));
-        assert!(matches!(entries[1], Ok(GitignoreEntry::Comment(_))));
-        assert!(matches!(entries[2], Ok(GitignoreEntry::Pattern(_))));
+        assert!(matches!(entries[0], Ok(Pattern(_))));
+        assert!(matches!(entries[1], Ok(Comment(_))));
+        assert!(matches!(entries[2], Ok(Pattern(_))));
+    }
+
+    #[test]
+    fn patterns() {
+        let input = dedent!(
+            "
+            /foo
+            /foo/*
+            /foo/**
+            /foo/**/*.bar
+            */baz
+            **/baz
+            foo/**/bar
+            foo/?/bar
+            **?**
+"
+        );
+        let parser = util::from_str(input.as_str());
+        let entries: Vec<_> = parser.collect();
+        let patterns: Vec<pattern::Pattern> = entries
+            .into_iter()
+            .filter_map(|entry| match entry {
+                Ok(GitignoreEntry::Pattern(p)) => Some(p),
+                _ => None,
+            })
+            .collect();
+
+        let expected = vec![
+            vec![Separator, Literal("foo".into())],
+            vec![Separator, Literal("foo".into()), Separator, Wildcard],
+            vec![Separator, Literal("foo".into()), Separator, DoubleWildcard],
+            vec![
+                Separator,
+                Literal("foo".into()),
+                Separator,
+                DoubleWildcard,
+                Separator,
+                Wildcard,
+                Literal(".bar".into()),
+            ],
+            vec![Wildcard, Separator, Literal("baz".into())],
+            vec![DoubleWildcard, Separator, Literal("baz".into())],
+            vec![
+                Literal("foo".into()),
+                Separator,
+                DoubleWildcard,
+                Separator,
+                Literal("bar".into()),
+            ],
+            vec![
+                Literal("foo".into()),
+                Separator,
+                SingleWildcard,
+                Separator,
+                Literal("bar".into()),
+            ],
+            vec![Wildcard, Wildcard, SingleWildcard, Wildcard, Wildcard],
+        ];
+
+        assert_eq!(patterns.len(), expected.len());
+
+        for (pattern, expected_segments) in patterns.iter().zip(expected.iter()) {
+            util::assert_pattern(pattern, expected_segments);
+        }
     }
 }
