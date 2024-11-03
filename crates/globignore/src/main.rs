@@ -1,6 +1,15 @@
-use std::{convert::Infallible, fmt::Display, ops::Deref, path::PathBuf, str::FromStr};
+mod glob;
+
+use std::{
+    convert::Infallible, fmt::Display, fs::File, io::BufReader, ops::Deref, path::PathBuf,
+    str::FromStr,
+};
 
 use clap::{Parser, ValueEnum};
+
+use gitignore::parser::{GitignoreEntry, ParseError};
+use glob::convert_to_globs;
+use serde::Serialize;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -65,8 +74,29 @@ impl Deref for Cwd {
     }
 }
 
+#[derive(Serialize)]
+struct Output(Vec<String>);
+
 fn main() {
     let Cli { cwd, format } = Cli::parse();
 
-    println!("{} {}", cwd, format);
+    let gitignore_file = File::open(cwd.join(".gitignore")).unwrap();
+    let parser = gitignore::parser::Parser::new(BufReader::new(gitignore_file));
+    let entries: Vec<GitignoreEntry> = parser
+        .filter_map(|entry| match entry {
+            Ok(entry) => Some(entry),
+            Err(_) => None,
+        })
+        .collect();
+
+    let globs: Vec<String> = convert_to_globs(entries)
+        .into_iter()
+        .map(|glob| glob.pattern)
+        .collect();
+    let output = match format {
+        Format::Json => serde_json::to_string(&Output(globs)).unwrap(),
+        Format::Yaml => serde_yaml_ng::to_string(&Output(globs)).unwrap(),
+    };
+
+    println!("{output}");
 }

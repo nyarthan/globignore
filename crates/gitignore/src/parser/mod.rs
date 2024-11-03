@@ -1,4 +1,4 @@
-mod pattern;
+pub mod pattern;
 
 use std::io::{self, BufRead};
 
