@@ -2,3 +2,6 @@
 name = "gitignore"
 version = "0.1.0"
 edition = "2021"
+
+[dev-dependencies]
+dedent = "0.1.0"

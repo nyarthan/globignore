@@ -98,8 +98,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
+name = "dedent"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6df139c8c5ea70e1f9dd5934b867128b52ba8c122f5c8f450a926cf5f1cf386"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "gitignore"
 version = "0.1.0"
+dependencies = [
+ "dedent",
+]
 
 [[package]]
 name = "globignore"

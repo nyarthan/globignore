@@ -86,6 +86,8 @@ impl<R: BufRead> Iterator for Parser<R> {
 
 #[cfg(test)]
 mod tests {
+    use dedent::dedent;
+
     use super::*;
 
     mod util {
@@ -98,8 +100,14 @@ mod tests {
 
     #[test]
     fn parse_string() {
-        let input = "root.txt\n#comment\ndir/";
-        let parser = util::from_str(input);
+        let input = dedent!(
+            "
+            root.txt
+            #comment
+            dir/
+        "
+        );
+        let parser = util::from_str(input.as_str());
         let entries: Vec<_> = parser.collect();
 
         assert_eq!(entries.len(), 3);
