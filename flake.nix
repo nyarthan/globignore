@@ -43,6 +43,8 @@
         {
           treefmt.config = import ./nix/treefmt.nix { inherit config pkgs; };
 
+          packages.default = pkgs.callPackage ./nix/packages/globignore.nix { };
+
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.just

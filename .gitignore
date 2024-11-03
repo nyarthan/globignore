@@ -1,3 +1,4 @@
 /target
 /.direnv
 treefmt.toml
+/result
